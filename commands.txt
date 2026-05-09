@@ -1,0 +1,525 @@
+==============================
+FULL STACK COMMANDS REFERENCE
+==============================
+
+--------------------------------
+SYSTEM SETUP
+--------------------------------
+
+sudo apt update
+Refresh Ubuntu package lists from repositories.
+
+sudo apt upgrade -y
+Upgrade installed packages automatically.
+
+sudo apt install -y git curl sqlite3 build-essential
+Install git, curl, SQLite CLI, and compiler tools.
+
+git --version
+Check git installation.
+
+curl --version
+Check curl installation.
+
+sqlite3 --version
+Check SQLite installation.
+
+--------------------------------
+NODE.JS INSTALLATION
+--------------------------------
+
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+Add modern Node.js repository to Ubuntu.
+
+sudo apt install -y nodejs
+Install Node.js and npm.
+
+node -v
+Check Node.js version.
+
+npm -v
+Check npm version.
+
+--------------------------------
+PROJECT SETUP
+--------------------------------
+
+mkdir app
+Create project root folder.
+
+cd app
+Enter project folder.
+
+ls
+List files in current directory.
+
+ls -la
+List all files including hidden files.
+
+pwd
+Print current working directory.
+
+--------------------------------
+FRONTEND SETUP
+--------------------------------
+
+npm create vite@latest client
+Generate React + Vite frontend app.
+
+cd client
+Enter frontend directory.
+
+npm install
+Install frontend dependencies from package.json.
+
+npm run dev
+Start Vite development server.
+
+npm install axios
+Install axios HTTP library.
+
+rm -rf node_modules package-lock.json
+Delete installed packages and lockfile.
+
+npm install
+Reinstall dependencies cleanly.
+
+--------------------------------
+BACKEND SETUP
+--------------------------------
+
+mkdir server
+Create backend folder.
+
+cd server
+Enter backend folder.
+
+npm init -y
+Generate package.json automatically.
+
+npm install express cors sqlite3
+Install backend dependencies.
+
+node server.js
+Run backend server.
+
+--------------------------------
+DATABASE COMMANDS
+--------------------------------
+
+sqlite3 tasks.db
+Open or create SQLite database.
+
+.tables
+List all database tables.
+
+.schema tasks
+Show structure of tasks table.
+
+SELECT * FROM tasks;
+Show all rows from tasks table.
+
+DELETE FROM tasks;
+Delete all rows but keep table.
+
+DROP TABLE tasks;
+Delete entire table permanently.
+
+.quit
+Exit SQLite CLI.
+
+--------------------------------
+PROCESS MANAGEMENT
+--------------------------------
+
+CTRL + C
+Stop currently running process.
+
+lsof -i :3000
+Show process using port 3000.
+
+lsof -i :5173
+Show process using port 5173.
+
+kill -9 PID
+Force kill process by PID.
+
+pkill -f node
+Kill all Node.js processes.
+
+pkill -f vite
+Kill all Vite processes.
+
+--------------------------------
+NETWORKING
+--------------------------------
+
+ping 8.8.8.8
+Test raw internet connectivity.
+
+ping google.com
+Test DNS resolution.
+
+curl http://localhost:3000
+Send HTTP request to backend.
+
+sudo systemctl restart NetworkManager
+Restart Ubuntu networking service.
+
+--------------------------------
+GIT
+--------------------------------
+
+git init
+Initialize git repository.
+
+git add .
+Stage all files for commit.
+
+git commit -m "message"
+Create git commit snapshot.
+
+git status
+Show changed files.
+
+git log
+Show commit history.
+
+========================================
+SERVER.JS TEMPLATE LINE-BY-LINE EXPLANATION
+========================================
+
+const express = require("express");
+
+Import Express framework into project.
+
+--------------------------------
+
+const cors = require("cors");
+
+Import CORS middleware package.
+
+--------------------------------
+
+const sqlite3 = require("sqlite3").verbose();
+
+Import SQLite driver with verbose debugging enabled.
+
+--------------------------------
+
+const path = require("path");
+
+Import Node.js path utility module.
+
+--------------------------------
+
+const app = express();
+
+Create Express application/server object.
+
+--------------------------------
+
+const PORT = 3000;
+
+Store backend port number in variable.
+
+--------------------------------
+
+app.use(cors());
+
+Enable cross-origin requests from frontend.
+
+--------------------------------
+
+app.use(express.json());
+
+Automatically parse incoming JSON request bodies.
+
+--------------------------------
+
+const db = new sqlite3.Database(
+  path.join(__dirname, "tasks.db")
+);
+
+Open SQLite database file.
+
+If file does not exist:
+SQLite creates it automatically.
+
+__dirname:
+Current folder of server.js.
+
+path.join():
+Safely construct filesystem path.
+
+--------------------------------
+
+db.run(`
+CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  done INTEGER DEFAULT 0
+)
+`);
+
+Execute SQL query.
+
+CREATE TABLE:
+Create table.
+
+IF NOT EXISTS:
+Prevent crash if table already exists.
+
+id INTEGER PRIMARY KEY AUTOINCREMENT:
+Unique auto-incrementing ID.
+
+title TEXT NOT NULL:
+Required text column.
+
+done INTEGER DEFAULT 0:
+Boolean-like flag stored as integer.
+
+--------------------------------
+
+app.get("/", (req, res) => {
+  res.json({
+    message: "server running"
+  });
+});
+
+Create GET endpoint for "/".
+
+req:
+Incoming request object.
+
+res:
+Outgoing response object.
+
+res.json():
+Send JSON response to client.
+
+--------------------------------
+
+app.get("/tasks", (req, res) => {
+
+Create route for:
+GET /tasks
+
+Used to fetch all tasks.
+
+--------------------------------
+
+db.all(
+  "SELECT * FROM tasks",
+  [],
+  (err, rows) => {
+
+Run SQL query returning all matching rows.
+
+err:
+Database error object.
+
+rows:
+Returned query data.
+
+--------------------------------
+
+if (err)
+  return res.status(500).json({
+    error: err.message
+  });
+
+If query fails:
+Return HTTP 500 server error response.
+
+--------------------------------
+
+res.json(rows);
+
+Send database rows back as JSON.
+
+--------------------------------
+
+app.post("/tasks", (req, res) => {
+
+Create POST endpoint for creating tasks.
+
+--------------------------------
+
+const { title } = req.body;
+
+Extract title from incoming JSON body.
+
+Equivalent to:
+const title = req.body.title;
+
+--------------------------------
+
+if (!title)
+
+Check if title is missing/empty.
+
+--------------------------------
+
+return res.status(400).json({
+  error: "Title required"
+});
+
+Return HTTP 400 bad request response.
+
+--------------------------------
+
+db.run(
+  "INSERT INTO tasks(title) VALUES(?)",
+  [title],
+
+Execute parameterized SQL insert query.
+
+? placeholder prevents SQL injection.
+
+[title]:
+Value replacing placeholder.
+
+--------------------------------
+
+function(err) {
+
+Regular function used instead of arrow function
+because SQLite exposes:
+this.lastID
+
+--------------------------------
+
+this.lastID
+
+ID of newly inserted database row.
+
+--------------------------------
+
+res.status(201).json({
+  id: this.lastID,
+  title
+});
+
+Return HTTP 201 created response.
+
+--------------------------------
+
+app.put("/tasks/:id", ...)
+
+Update existing task.
+
+:id:
+Dynamic URL parameter.
+
+Access via:
+req.params.id
+
+--------------------------------
+
+app.delete("/tasks/:id", ...)
+
+Delete task endpoint.
+
+--------------------------------
+
+app.listen(PORT, () => {
+  console.log(
+    `Server running on port ${PORT}`
+  );
+});
+
+Start HTTP server.
+
+Bind process to network port.
+
+Without listen():
+server does not accept requests.
+
+========================================
+FRONTEND FLOW
+========================================
+
+fetch("http://localhost:3000/tasks")
+
+Send HTTP GET request to backend.
+
+--------------------------------
+
+.then(res => res.json())
+
+Convert HTTP response body into JavaScript object.
+
+--------------------------------
+
+.then(data => setTasks(data))
+
+Store returned data into React state.
+
+--------------------------------
+
+useState([])
+
+Create reactive state variable.
+
+--------------------------------
+
+useEffect(() => {}, [])
+
+Run code once when component loads.
+
+--------------------------------
+
+onChange={(e) => setTitle(e.target.value)}
+
+Update state when user types.
+
+--------------------------------
+
+map()
+
+Loop through array and render UI elements.
+
+--------------------------------
+
+key={task.id}
+
+Unique identifier for React rendering optimization.
+
+========================================
+HTTP METHODS
+========================================
+
+GET
+Fetch/read data.
+
+POST
+Create new data.
+
+PUT
+Replace/update existing data.
+
+PATCH
+Partially update existing data.
+
+DELETE
+Remove data.
+
+========================================
+HTTP STATUS CODES
+========================================
+
+200
+Successful request.
+
+201
+Resource created successfully.
+
+400
+Client sent invalid data.
+
+404
+Resource not found.
+
+500
+Server-side failure.
